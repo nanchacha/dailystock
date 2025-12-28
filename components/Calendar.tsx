@@ -95,12 +95,12 @@ export default function Calendar({ news }: { news: NewsItem[] }) {
                     {themes && themes.length > 0 && (
                         <div className="absolute inset-0 flex flex-col items-center justify-center pt-4 pointer-events-none">
                             {/* Main Theme */}
-                            <span className="text-3xl filter drop-shadow-sm leading-none z-10 transform hover:scale-110 transition-transform">
+                            <span className="text-2xl filter drop-shadow-sm leading-none z-10 transform hover:scale-110 transition-transform">
                                 {themes[0]}
                             </span>
                             {/* Second Theme (if exists) */}
                             {themes.length > 1 && (
-                                <span className="text-lg filter drop-shadow-sm opacity-90 -mt-1 z-0">
+                                <span className="text-sm filter drop-shadow-sm opacity-90 -mt-1 z-0">
                                     {themes[1]}
                                 </span>
                             )}
