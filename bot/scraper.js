@@ -3,7 +3,7 @@ const { StringSession } = require("telegram/sessions");
 const input = require("input"); // npm install input
 const fs = require("fs");
 const path = require("path");
-require("dotenv").config();
+require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 
 const apiId = parseInt(process.env.API_ID);
 const apiHash = process.env.API_HASH;
