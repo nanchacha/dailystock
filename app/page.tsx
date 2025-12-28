@@ -25,6 +25,7 @@ async function getNews() {
 }
 
 import Calendar from '@/components/Calendar';
+import NewsFeed from '@/components/NewsFeed';
 
 export default async function Home() {
   const news = await getNews();
@@ -61,39 +62,7 @@ export default async function Home() {
           </div>
 
           {/* Feed Section - Right Side (News) */}
-          <div className="lg:col-span-1 space-y-8">
-            {news.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                <p className="text-slate-500 text-lg">오늘 수집된 뉴스가 없습니다.</p>
-                <p className="text-slate-400 text-sm mt-2">자동 수집기를 확인해주세요.</p>
-              </div>
-            ) : news.map((item) => {
-              const itemDate = new Date(item.date);
-              const dateId = `news-${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}-${String(itemDate.getDate()).padStart(2, '0')}`;
-
-              return (
-                <article id={dateId} key={item.id} className="group bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 overflow-hidden border border-slate-100 scroll-mt-24">
-                  <div className="p-6 sm:p-8">
-                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50">
-                      <span className="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider rounded-full">
-                        {item.source}
-                      </span>
-                      <time className="text-sm font-medium text-slate-400">
-                        {itemDate.toLocaleString('ko-KR', {
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </time>
-                    </div>
-                    <div className="text-slate-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: item.content }} />
-                  </div>
-                </article>
-              );
-            })
-            }
-          </div>
+          <NewsFeed initialNews={news} />
         </div>
 
         <footer className="mt-20 text-center text-slate-400 text-sm">
