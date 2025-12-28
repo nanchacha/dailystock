@@ -222,15 +222,34 @@ function formatStockReport(text) {
                 stockNames = [...new Set(stockNames)]; // Deduplicate
 
                 const count = stockNames.length;
-                const countStr = count > 0 ? `총 ${count}개 종목` : "";
+                const countStr = count > 0 ? `${count}개` : "";
 
                 // User requested: fixed 14pt font size
                 const fontSizePt = 14;
 
+                // Emoji mapping logic
+                let emoji = "📈"; // Default
+                if (category.includes("로봇")) emoji = "🤖";
+                else if (category.includes("반도체")) emoji = "💾";
+                else if (category.includes("제약") || category.includes("바이오")) emoji = "💊";
+                else if (category.includes("자동차") || category.includes("자율주행") || category.includes("모빌리티")) emoji = "🚗";
+                else if (category.includes("조선")) emoji = "🚢";
+                else if (category.includes("우주") || category.includes("항공")) emoji = "🚀";
+                else if (category.includes("화장품") || category.includes("뷰티")) emoji = "💄";
+                else if (category.includes("배터리") || category.includes("2차전지") || category.includes("에너지")) emoji = "🔋";
+                else if (category.includes("게임")) emoji = "🎮";
+                else if (category.includes("AI") || category.includes("인공지능")) emoji = "🧠";
+                else if (category.includes("정치") || category.includes("정책") || category.includes("총선")) emoji = "🔨";
+                else if (category.includes("건설") || category.includes("재건")) emoji = "🏗️";
+                else if (category.includes("방산") || category.includes("전쟁")) emoji = "⚔️";
+                else if (category.includes("경영") || category.includes("인수")) emoji = "🤝";
+                else if (category.includes("금융") || category.includes("투자")) emoji = "💰";
+                else if (category.includes("개별")) emoji = "✨";
+
                 formattedOutput += `<div class="mb-6">`;
                 formattedOutput += `<h3 class="text-lg font-bold text-blue-700 mb-2 flex items-center gap-2">
-                    ${category} 
-                    ${countStr ? `<span class="text-sm font-normal text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">${countStr}</span>` : ''}
+                    <span class="text-2xl mr-1">${emoji}</span> ${category} 
+                    ${countStr ? `<span class="text-sm font-bold text-white bg-slate-500 px-2 py-0.5 rounded-full shadow-md">${countStr}</span>` : ''}
                 </h3>`;
                 formattedOutput += `<ul class="space-y-1 ml-1" style="font-size: ${fontSizePt}pt; line-height: 1.6;">`;
 
