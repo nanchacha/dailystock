@@ -1,0 +1,55 @@
+name: Daily Stock Scraper
+
+on:
+  schedule:
+    # 매일 한국 시간 오후 4시 30분 (UTC 07:30)에 실행
+    # (장 마감 및 데이터 정리 시간을 고려함)
+    - cron: '30 7 * * 1-5' 
+  workflow_dispatch: # 수동 실행 버튼 추가
+
+jobs:
+  scrape-and-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 리포지토리에 푸시할 권한
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install dependencies
+      run: |
+        npm install telegram input dotenv
+
+    - name: Run Scraper
+      env:
+        API_ID: ${{ secrets.API_ID }}
+        API_HASH: ${{ secrets.API_HASH }}
+        CHANNEL_USERNAME: ${{ secrets.CHANNEL_USERNAME }}
+        TELEGRAM_SESSION: ${{ secrets.TELEGRAM_SESSION }}
+        TARGET_JSON_PATH: "../public/data/stock_news.json"
+      run: |
+        # 세션 파일을 시크릿에서 생성
+        echo "$TELEGRAM_SESSION" > bot/session_string.txt
+        
+        # 봇 실행
+        node bot/scraper.js
+
+    - name: Commit and Push changes
+      run: |
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add public/data/stock_news.json
+        
+        # 변경사항이 있을 때만 커밋
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "chore: Update stock news data [skip ci]"
+          git push
+        fi
