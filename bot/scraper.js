@@ -240,7 +240,7 @@ function formatStockReport(text) {
                 else if (category.includes("배터리") || category.includes("2차전지") || category.includes("이차전지") || category.includes("에너지")) emoji = "⚡";
                 else if (category.includes("게임")) emoji = "🎮";
                 else if (category.includes("AI") || category.includes("인공지능")) emoji = "🧠";
-                else if (category.includes("정치") || category.includes("정책") || category.includes("총선")) emoji = "🔨";
+                else if (category.includes("정치") || category.includes("정책") || category.includes("총선")) emoji = "🏛️";
                 else if (category.includes("건설") || category.includes("재건")) emoji = "🏗️";
                 else if (category.includes("방산") || category.includes("전쟁")) emoji = "⚔️";
                 else if (category.includes("경영") || category.includes("인수")) emoji = "🤝";
