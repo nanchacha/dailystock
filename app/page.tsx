@@ -6,6 +6,7 @@ type NewsItem = {
   date: string;
   content: string;
   source: string;
+  isemusaContent?: string;
 };
 
 // Force dynamic rendering so we see new file changes on refresh without rebuild

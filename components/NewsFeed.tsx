@@ -7,6 +7,7 @@ type NewsItem = {
     date: string;
     content: string;
     source: string;
+    isemusaContent?: string;
 };
 
 // ... existing helper functions ...
@@ -93,12 +94,15 @@ function NewsItemCard({ item, filterMinCap }: { item: NewsItem, filterMinCap: bo
             }
             return item.content;
         } else {
-            // Placeholder for 'Isemusa' content
+            // Show Isemusa content if exists, else placeholder
+            if (item.isemusaContent) {
+                return item.isemusaContent;
+            }
             return `<div class="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
                 <p>준비중인 컨텐츠입니다.</p>
             </div>`;
         }
-    }, [item.content, filterMinCap, activeTab]);
+    }, [item.content, item.isemusaContent, filterMinCap, activeTab]);
 
     const itemDate = new Date(item.date);
     const dateId = `news-${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}-${String(itemDate.getDate()).padStart(2, '0')}`;
@@ -118,8 +122,8 @@ function NewsItemCard({ item, filterMinCap }: { item: NewsItem, filterMinCap: bo
                         <button
                             onClick={() => setActiveTab(1)}
                             className={`inline-flex items-center px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full transition-all ${activeTab === 1
-                                    ? 'bg-pink-100 text-red-600 ring-2 ring-pink-200 shadow-sm'
-                                    : 'bg-pink-50 text-red-600/70 hover:bg-pink-100 hover:text-red-600'
+                                ? 'bg-pink-100 text-red-600 ring-2 ring-pink-200 shadow-sm'
+                                : 'bg-pink-50 text-red-600/70 hover:bg-pink-100 hover:text-red-600'
                                 }`}
                         >
                             이세무사
