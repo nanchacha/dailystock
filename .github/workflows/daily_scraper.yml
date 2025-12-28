@@ -2,9 +2,8 @@ name: Daily Stock Scraper
 
 on:
   schedule:
-    # 매일 한국 시간 오후 4시 30분 (UTC 07:30)에 실행
-    # (장 마감 및 데이터 정리 시간을 고려함)
-    - cron: '30 7 * * 1-5' 
+    # 매일 평일 오후 5시 45분 (UTC 08:45)에 실행
+    - cron: '45 8 * * 1-5' 
   workflow_dispatch: # 수동 실행 버튼 추가
 
 jobs:
