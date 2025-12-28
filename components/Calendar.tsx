@@ -127,6 +127,7 @@ export default function Calendar({ news }: { news: NewsItem[] }) {
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">💄</span>화장품</span>
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🤝</span>경영</span>
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🔒</span>보안</span>
+                <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🌬️</span>풍력</span>
             </div>
 
             <div className="flex justify-between items-center mb-6">
