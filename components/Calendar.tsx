@@ -117,7 +117,7 @@ export default function Calendar({ news }: { news: NewsItem[] }) {
             {/* Legend */}
             <div className="mb-6 flex flex-wrap gap-2 p-3 bg-slate-50 rounded-xl border border-slate-100">
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🚗</span>복합/자율</span>
-                <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">💾</span>반도체</span>
+                <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">💽</span>반도체</span>
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🤖</span>로봇</span>
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">💊</span>바이오</span>
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🚀</span>우주</span>

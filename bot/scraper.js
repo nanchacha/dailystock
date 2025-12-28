@@ -230,7 +230,7 @@ function formatStockReport(text) {
                 // Emoji mapping logic
                 let emoji = "📈"; // Default
                 if (category.includes("로봇")) emoji = "🤖";
-                else if (category.includes("반도체")) emoji = "💾";
+                else if (category.includes("반도체")) emoji = "💽";
                 else if (category.includes("제약") || category.includes("바이오")) emoji = "💊";
                 else if (category.includes("자동차") || category.includes("자율주행") || category.includes("모빌리티")) emoji = "🚗";
                 else if (category.includes("조선")) emoji = "🚢";
