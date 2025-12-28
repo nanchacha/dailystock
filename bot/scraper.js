@@ -8,7 +8,7 @@ require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 const apiId = parseInt(process.env.API_ID);
 const apiHash = process.env.API_HASH;
 const channelUsername = process.env.CHANNEL_USERNAME;
-const sessionFile = "session_string.txt"; // Save session string to file to reuse
+const sessionFile = path.resolve(__dirname, "session_string.txt"); // Save session string to file to reuse
 
 // Ensure data directory exists
 const targetPath = path.resolve(__dirname, process.env.TARGET_JSON_PATH || "../public/data/stock_news.json");
@@ -236,7 +236,7 @@ function formatStockReport(text) {
                 else if (category.includes("조선")) emoji = "🚢";
                 else if (category.includes("우주") || category.includes("항공")) emoji = "🚀";
                 else if (category.includes("화장품") || category.includes("뷰티")) emoji = "💄";
-                else if (category.includes("배터리") || category.includes("2차전지") || category.includes("에너지")) emoji = "🔋";
+                else if (category.includes("배터리") || category.includes("2차전지") || category.includes("에너지")) emoji = "⚡";
                 else if (category.includes("게임")) emoji = "🎮";
                 else if (category.includes("AI") || category.includes("인공지능")) emoji = "🧠";
                 else if (category.includes("정치") || category.includes("정책") || category.includes("총선")) emoji = "🔨";

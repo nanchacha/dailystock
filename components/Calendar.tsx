@@ -123,7 +123,7 @@ export default function Calendar({ news }: { news: NewsItem[] }) {
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🚀</span>우주</span>
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🔨</span>정책</span>
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🚢</span>조선</span>
-                <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🔋</span>2차전지</span>
+                <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">⚡</span>2차전지</span>
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">💄</span>화장품</span>
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🤝</span>경영</span>
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🔒</span>보안</span>
