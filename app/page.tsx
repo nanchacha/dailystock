@@ -51,9 +51,9 @@ export default async function Home() {
               <Calendar news={news} />
 
               {/* Tip Widget */}
-              <div className="bg-slate-900 text-white rounded-2xl p-6 shadow-lg bg-gradient-to-br from-slate-900 to-slate-800">
+              <div className="bg-slate-100 text-slate-900 rounded-2xl p-6 border border-slate-200">
                 <h3 className="font-bold text-lg mb-2">💡 Tip</h3>
-                <p className="text-slate-300 text-sm">
+                <p className="text-slate-600 text-sm">
                   달력의 날짜를 확인하여<br />
                   월별 테마 흐름을 한눈에 파악하세요.
                 </p>
