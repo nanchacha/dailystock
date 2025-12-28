@@ -24,28 +24,28 @@ export default function Calendar({ news }: { news: NewsItem[] }) {
     };
 
     const monthData = useMemo(() => {
-        const data: Record<number, string> = {};
+        const data: Record<number, string[]> = {};
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
 
         news.forEach(item => {
             const itemDate = new Date(item.date);
             if (itemDate.getFullYear() === year && itemDate.getMonth() === month) {
-                // Extract top theme
-                // New format: <h3 ...><span class="text-2xl mr-1">🤖</span> Category <span ...>Count</span></h3>
-                const emojiMatch = item.content.match(/<h3[^>]*>\s*<span[^>]*>([\s\S]*?)<\/span>([\s\S]*?)<span/);
+                // Extract top themes (up to 2)
+                const emojiRegex = /<h3[^>]*>\s*<span[^>]*>([\s\S]*?)<\/span>([\s\S]*?)<span/g;
+                const matches = [...item.content.matchAll(emojiRegex)];
 
-                if (emojiMatch) {
-                    const emoji = emojiMatch[1].trim();
-                    // User requested ONLY emoji to reduce clutter
-                    data[itemDate.getDate()] = emoji;
+                if (matches.length > 0) {
+                    // Take up to 2 emojis
+                    const emojis = matches.slice(0, 2).map(m => m[1].trim());
+                    data[itemDate.getDate()] = emojis;
                 } else {
                     // Fallback for old data or simple format
                     const match = item.content.match(/<h3[^>]*>([\s\S]*?)<span/);
                     if (match) {
                         let theme = match[1].trim();
                         theme = theme.replace(/\n/g, '').trim();
-                        data[itemDate.getDate()] = theme;
+                        data[itemDate.getDate()] = [theme];
                     }
                 }
             }
@@ -70,14 +70,14 @@ export default function Calendar({ news }: { news: NewsItem[] }) {
 
             // Format YYYY-MM-DD local
             const dateId = `news-${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
-            const theme = monthData[d];
+            const themes = monthData[d];
 
             const scrollToDate = () => {
                 const element = document.getElementById(dateId);
                 if (element) {
                     element.scrollIntoView({ behavior: 'smooth' });
                 } else {
-                    if (theme) {
+                    if (themes) {
                         alert("해당 날짜의 뉴스를 찾을 수 없습니다.");
                     }
                 }
@@ -87,16 +87,23 @@ export default function Calendar({ news }: { news: NewsItem[] }) {
                 <div
                     key={d}
                     onClick={scrollToDate}
-                    className={`h-24 border rounded-lg p-1 relative flex flex-col items-start justify-start transition-all duration-200 bg-white ${isToday ? 'ring-2 ring-blue-500 box-content z-10' : 'border-slate-100'} ${theme ? 'cursor-pointer hover:shadow-md hover:border-blue-200 hover:bg-blue-50/30' : ''}`}
+                    className={`h-24 border rounded-lg p-1 relative flex flex-col items-start justify-start transition-all duration-200 bg-white ${isToday ? 'ring-2 ring-blue-500 box-content z-10' : 'border-slate-100'} ${themes ? 'cursor-pointer hover:shadow-md hover:border-blue-200 hover:bg-blue-50/30' : ''}`}
                 >
                     <span className={`text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full ${isToday ? 'bg-blue-600 text-white' : 'text-slate-400'}`}>
                         {d}
                     </span>
-                    {theme && (
-                        <div className="absolute inset-0 flex items-center justify-center pt-4">
-                            <span className="text-3xl filter drop-shadow-sm transform hover:scale-110 transition-transform">
-                                {theme}
+                    {themes && themes.length > 0 && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pt-4 pointer-events-none">
+                            {/* Main Theme */}
+                            <span className="text-3xl filter drop-shadow-sm leading-none z-10 transform hover:scale-110 transition-transform">
+                                {themes[0]}
                             </span>
+                            {/* Second Theme (if exists) */}
+                            {themes.length > 1 && (
+                                <span className="text-lg filter drop-shadow-sm opacity-90 -mt-1 z-0">
+                                    {themes[1]}
+                                </span>
+                            )}
                         </div>
                     )}
                 </div>
@@ -119,6 +126,7 @@ export default function Calendar({ news }: { news: NewsItem[] }) {
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🔋</span>2차전지</span>
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">💄</span>화장품</span>
                 <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🤝</span>경영</span>
+                <span className="text-[10px] text-slate-500 font-medium flex items-center gap-1"><span className="text-base">🔒</span>보안</span>
             </div>
 
             <div className="flex justify-between items-center mb-6">

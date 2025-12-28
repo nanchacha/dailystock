@@ -244,6 +244,7 @@ function formatStockReport(text) {
                 else if (category.includes("방산") || category.includes("전쟁")) emoji = "⚔️";
                 else if (category.includes("경영") || category.includes("인수")) emoji = "🤝";
                 else if (category.includes("금융") || category.includes("투자")) emoji = "💰";
+                else if (category.includes("보안") || category.includes("정보") || category.includes("해킹") || category.includes("드론")) emoji = "🔒";
                 else if (category.includes("개별")) emoji = "✨";
 
                 formattedOutput += `<div class="mb-6">`;
