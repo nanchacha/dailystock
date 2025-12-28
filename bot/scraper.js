@@ -11,7 +11,7 @@ const channelUsername = process.env.CHANNEL_USERNAME;
 const sessionFile = "session_string.txt"; // Save session string to file to reuse
 
 // Ensure data directory exists
-const targetPath = path.resolve(__dirname, process.env.TARGET_JSON_PATH || "../web/public/data/stock_news.json");
+const targetPath = path.resolve(__dirname, process.env.TARGET_JSON_PATH || "../public/data/stock_news.json");
 
 async function main() {
     if (!apiId || !apiHash || !channelUsername) {
