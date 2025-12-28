@@ -236,7 +236,7 @@ function formatStockReport(text) {
                 else if (category.includes("조선")) emoji = "🚢";
                 else if (category.includes("우주") || category.includes("항공")) emoji = "🚀";
                 else if (category.includes("화장품") || category.includes("뷰티")) emoji = "💄";
-                else if (category.includes("신재생") || category.includes("풍력") || category.includes("태양광")) emoji = "🌬️";
+                else if (category.includes("신재생") || category.includes("풍력") || category.includes("태양광")) emoji = "🌀";
                 else if (category.includes("배터리") || category.includes("2차전지") || category.includes("이차전지") || category.includes("에너지")) emoji = "⚡";
                 else if (category.includes("게임")) emoji = "🎮";
                 else if (category.includes("AI") || category.includes("인공지능")) emoji = "🧠";
