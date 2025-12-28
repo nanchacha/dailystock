@@ -95,7 +95,7 @@ export default function NewsFeed({ initialNews }: { initialNews: NewsItem[] }) {
     return (
         <div className="lg:col-span-1 space-y-8 lg:-mt-[3.5rem]">
             {/* Controls */}
-            <div className="sticky top-8 z-10 flex justify-end items-center mb-4 backdrop-blur-sm bg-slate-50/80 py-2 -mx-2 px-2 rounded-xl transition-all">
+            <div className="sticky top-8 z-10 flex justify-end items-center mb-4">
                 <label className="flex items-center cursor-pointer space-x-2 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
                     <input
                         type="checkbox"
