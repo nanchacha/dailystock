@@ -251,7 +251,7 @@ function formatStockReport(text) {
                 formattedOutput += `<div class="mb-6">`;
                 formattedOutput += `<h3 class="text-lg font-bold text-blue-700 mb-2 flex items-center gap-2">
                     <span class="text-2xl mr-1">${emoji}</span> ${category} 
-                    ${countStr ? `<span class="text-sm font-bold text-white bg-slate-500 px-2 py-0.5 rounded-full shadow-md">${countStr}</span>` : ''}
+                    ${countStr ? `<span class="text-sm font-bold text-white bg-slate-500 px-2 py-0.5 rounded-full shadow-md whitespace-nowrap flex-shrink-0">${countStr}</span>` : ''}
                 </h3>`;
                 formattedOutput += `<ul class="space-y-1 ml-1" style="font-size: ${fontSizePt}pt; line-height: 1.6;">`;
 
