@@ -221,7 +221,15 @@ function formatStockReport(text) {
                 let stockNames = cleanedStocksPart.split(/,|등/).map(s => s.trim()).filter(s => s.length > 0);
                 stockNames = [...new Set(stockNames)]; // Deduplicate
 
-                const count = stockNames.length;
+                // Filter out stocks that do not have details (not in the Top 30 list)
+                const validStockNames = stockNames.filter(name => stockDetails.has(name));
+
+                if (validStockNames.length === 0) {
+                    i++; // Skip the stock list line even if we don't print anything
+                    continue;
+                }
+
+                const count = validStockNames.length;
                 const countStr = count > 0 ? `${count}개` : "";
 
                 // User requested: fixed 14pt font size
@@ -247,6 +255,7 @@ function formatStockReport(text) {
                 else if (category.includes("금융") || category.includes("투자")) emoji = "💰";
                 else if (category.includes("보안") || category.includes("정보") || category.includes("해킹") || category.includes("드론")) emoji = "🔒";
                 else if (category.includes("개별")) emoji = "✨";
+                else if (category.includes("신규상장")) emoji = "🔥";
 
                 formattedOutput += `<div class="mb-6">`;
                 formattedOutput += `<h3 class="text-lg font-bold text-blue-700 mb-2 flex items-center gap-2">
@@ -255,22 +264,16 @@ function formatStockReport(text) {
                 </h3>`;
                 formattedOutput += `<ul class="space-y-1 ml-1" style="font-size: ${fontSizePt}pt; line-height: 1.6;">`;
 
-                for (const stockName of stockNames) {
+                for (const stockName of validStockNames) {
                     const details = stockDetails.get(stockName);
-                    if (details) {
-                        formattedOutput += `<li class="flex items-start text-slate-700">
-                            <span class="mr-2 text-blue-300" style="font-size: 0.8em; margin-top: 0.3em;">•</span>
-                            <span>
-                                <strong class="font-semibold text-slate-800">${stockName}</strong>
-                                <span style="font-size: 0.85em; opacity: 0.8;" class="ml-1 text-slate-600">(상승률 <span class="text-red-500 font-medium">${details.rate}</span>, 시총 ${details.marketCap})</span>
-                            </span>
-                        </li>`;
-                    } else {
-                        formattedOutput += `<li class="flex items-start text-slate-700">
-                            <span class="mr-2 text-blue-300" style="font-size: 0.8em; margin-top: 0.3em;">•</span>
-                            <span>${stockName}</span>
-                         </li>`;
-                    }
+                    // details is guaranteed to exist due to filter above
+                    formattedOutput += `<li class="flex items-start text-slate-700">
+                        <span class="mr-2 text-blue-300" style="font-size: 0.8em; margin-top: 0.3em;">•</span>
+                        <span>
+                            <strong class="font-semibold text-slate-800">${stockName}</strong>
+                            <span style="font-size: 0.85em; opacity: 0.8;" class="ml-1 text-slate-600">(상승률 <span class="text-red-500 font-medium">${details.rate}</span>, 시총 ${details.marketCap})</span>
+                        </span>
+                    </li>`;
                 }
                 formattedOutput += `</ul></div>`;
 
