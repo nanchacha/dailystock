@@ -1,28 +1,27 @@
-import { promises as fs } from 'fs';
-import path from 'path';
+import { supabase } from '@/lib/supabaseClient';
 
 type NewsItem = {
   id: number;
   date: string;
   content: string;
   source: string;
-  isemusaContent?: string;
 };
 
-// Force dynamic rendering so we see new file changes on refresh without rebuild
+// Force dynamic rendering so we see new DB changes on refresh without rebuild
 export const dynamic = 'force-dynamic';
 
 async function getNews() {
-  const filePath = path.join(process.cwd(), 'public', 'data', 'stock_news.json');
-  try {
-    const fileContents = await fs.readFile(filePath, 'utf8');
-    const data = JSON.parse(fileContents);
-    // Sort by date descending
-    return data.sort((a: NewsItem, b: NewsItem) => new Date(b.date).getTime() - new Date(a.date).getTime()) as NewsItem[];
-  } catch (error) {
-    console.error("Error reading news file:", error);
+  const { data, error } = await supabase
+    .from('stock_news')
+    .select('*')
+    .order('date', { ascending: false });
+
+  if (error) {
+    console.error("Error reading news from DB:", error);
     return [];
   }
+
+  return data as NewsItem[];
 }
 
 import Calendar from '@/components/Calendar';

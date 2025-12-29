@@ -1,10 +1,9 @@
 {
-    "rewrites": [
+    "framework": "nextjs",
+    "crons": [
         {
-            "source": "/(.*)",
-            "destination": "/"
+            "path": "/api/cron/scrape",
+            "schedule": "0 9 * * *"
         }
-    ],
-    "cleanUrls": true,
-    "framework": "nextjs"
+    ]
 }

@@ -10,7 +10,6 @@ type NewsItem = {
     isemusaContent?: string;
 };
 
-// ... existing helper functions ...
 function parseMarketCap(text: string): number {
     const match = text.match(/시총\s*([0-9,]+조)?\s*([0-9,]+억?)?/);
     if (!match) return 0;
@@ -59,76 +58,25 @@ function filterHtmlContent(html: string, minCap: number): string {
     return doc.body.innerHTML;
 }
 
-// Subcomponent for Source Tab
-function SourceTab({ source, isActive, onClick }: { source: string, isActive: boolean, onClick: () => void }) {
-    if (isActive) {
-        return (
-            <button
-                onClick={onClick}
-                className="inline-flex items-center px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider rounded-full ring-2 ring-blue-100 transition-all shadow-sm"
-            >
-                {source}
-            </button>
-        );
-    }
-    return (
-        <button
-            onClick={onClick}
-            className="inline-flex items-center px-3 py-1 bg-slate-50 text-slate-500 text-xs font-bold uppercase tracking-wider rounded-full hover:bg-slate-100 transition-all"
-        >
-            {source}
-        </button>
-    );
-}
-
-// Subcomponent for News Item to handle internal state (Tab Selection)
+// Subcomponent for News Item
 function NewsItemCard({ item, filterMinCap }: { item: NewsItem, filterMinCap: boolean }) {
-    // 0: Source (Mongdang), 1: Isemusa
-    const [activeTab, setActiveTab] = useState<0 | 1>(0);
-
     const displayContent = useMemo(() => {
-        if (activeTab === 0) {
-            // Filter if needed
-            if (filterMinCap) {
-                return filterHtmlContent(item.content, 1000);
-            }
-            return item.content;
-        } else {
-            // Show Isemusa content if exists, else placeholder
-            if (item.isemusaContent) {
-                return item.isemusaContent;
-            }
-            return `<div class="p-8 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                <p>준비중인 컨텐츠입니다.</p>
-            </div>`;
+        // Filter if needed and if it's Mongdang content (usually has market cap info)
+        if (filterMinCap && item.source === '몽당연필') {
+            return filterHtmlContent(item.content, 1000);
         }
-    }, [item.content, item.isemusaContent, filterMinCap, activeTab]);
+        return item.content;
+    }, [item.content, filterMinCap, item.source]);
 
     const itemDate = new Date(item.date);
     const dateId = `news-${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}-${String(itemDate.getDate()).padStart(2, '0')}`;
 
+    const isLeesemusa = item.source === '이세무사';
+
     return (
         <article id={dateId} className="group bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 overflow-hidden border border-slate-100 scroll-mt-24">
             <div className="p-6 sm:p-8">
-                <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50">
-                    <div className="flex items-center gap-2">
-                        {/* Tab 1: Mongdang (Original Source) */}
-                        <SourceTab
-                            source={item.source}
-                            isActive={activeTab === 0}
-                            onClick={() => setActiveTab(0)}
-                        />
-                        {/* Tab 2: Isemusa (Manual Addition) */}
-                        <button
-                            onClick={() => setActiveTab(1)}
-                            className={`inline-flex items-center px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full transition-all ${activeTab === 1
-                                ? 'bg-pink-100 text-red-600 ring-2 ring-pink-200 shadow-sm'
-                                : 'bg-pink-50 text-red-600/70 hover:bg-pink-100 hover:text-red-600'
-                                }`}
-                        >
-                            이세무사
-                        </button>
-                    </div>
+                <div className="flex items-center justify-end mb-6 pb-4 border-b border-slate-50">
                     <time className="text-sm font-medium text-slate-400">
                         {itemDate.toLocaleString('ko-KR', {
                             month: 'long',
@@ -146,27 +94,62 @@ function NewsItemCard({ item, filterMinCap }: { item: NewsItem, filterMinCap: bo
 
 export default function NewsFeed({ initialNews }: { initialNews: NewsItem[] }) {
     const [filterMinCap, setFilterMinCap] = useState(false);
+    const [currentSource, setCurrentSource] = useState('몽당연필'); // '몽당연필' or '이세무사'
+
+    const filteredNews = useMemo(() => {
+        return initialNews.filter(item => {
+            const itemSource = item.source || '몽당연필';
+            return itemSource === currentSource;
+        });
+    }, [initialNews, currentSource]);
 
     return (
         <div className="lg:col-span-1 space-y-8 lg:-mt-[3.5rem]">
-            {/* Controls */}
-            <div className="sticky top-8 z-10 flex justify-end items-center mb-4">
-                <label className="flex items-center cursor-pointer space-x-2 bg-white px-4 py-2 rounded-full border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors">
-                    <input
-                        type="checkbox"
-                        checked={filterMinCap}
-                        onChange={(e) => setFilterMinCap(e.target.checked)}
-                        className="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                    />
-                    <span className="text-sm font-medium text-slate-700">시총 1000억 이상만 보기</span>
-                </label>
+            {/* Controls & Tabs */}
+            <div className="sticky top-8 z-10 space-y-4 mb-8">
+                <div className="flex justify-between items-center bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-sm border border-slate-200/60">
+                    {/* Source Tabs */}
+                    <div className="flex space-x-1 bg-slate-100/50 p-1 rounded-xl">
+                        <button
+                            onClick={() => setCurrentSource('몽당연필')}
+                            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${currentSource === '몽당연필'
+                                ? 'bg-white text-blue-700 shadow-sm ring-1 ring-black/5'
+                                : 'text-slate-500 hover:bg-white/50'
+                                }`}
+                        >
+                            몽당연필
+                        </button>
+                        <button
+                            onClick={() => setCurrentSource('이세무사')}
+                            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${currentSource === '이세무사'
+                                ? 'bg-white text-red-600 shadow-sm ring-1 ring-black/5'
+                                : 'text-slate-500 hover:bg-white/50'
+                                }`}
+                        >
+                            이세무사
+                        </button>
+                    </div>
+
+                    {/* Filter Toggle */}
+                    <label className="flex items-center cursor-pointer space-x-2 px-3 py-1.5 hover:bg-slate-50 rounded-lg transition-colors">
+                        <input
+                            type="checkbox"
+                            checked={filterMinCap}
+                            onChange={(e) => setFilterMinCap(e.target.checked)}
+                            className="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                        />
+                        <span className="text-sm font-medium text-slate-700">시총 1000억 이상</span>
+                    </label>
+                </div>
             </div>
 
-            {initialNews.length === 0 ? (
+            {filteredNews.length === 0 ? (
                 <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                    <p className="text-slate-500 text-lg">표시할 뉴스가 없습니다.</p>
+                    <p className="text-slate-500 text-lg">
+                        {currentSource === '이세무사' ? '이세무사 컨텐츠가 없습니다.' : '표시할 뉴스가 없습니다.'}
+                    </p>
                 </div>
-            ) : initialNews.map((item) => (
+            ) : filteredNews.map((item) => (
                 <NewsItemCard key={item.id} item={item} filterMinCap={filterMinCap} />
             ))}
         </div>

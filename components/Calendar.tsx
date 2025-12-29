@@ -31,22 +31,16 @@ export default function Calendar({ news }: { news: NewsItem[] }) {
         news.forEach(item => {
             const itemDate = new Date(item.date);
             if (itemDate.getFullYear() === year && itemDate.getMonth() === month) {
-                // Extract top themes (up to 2)
-                const emojiRegex = /<h3[^>]*>\s*<span[^>]*>([\s\S]*?)<\/span>([\s\S]*?)<span/g;
+                // Extract top themes (up to 2) using a cleaner regex
+                // Looking for: <span class="text-2xl mr-1">EMOJI</span>
+                // or just the emoji character itself if the format varies slightly.
+                const emojiRegex = /<span[^>]*text-2xl[^>]*>([\s\S]*?)<\/span>/g;
                 const matches = [...item.content.matchAll(emojiRegex)];
 
                 if (matches.length > 0) {
-                    // Take up to 2 emojis
+                    // Take up to 2 emojis and trim
                     const emojis = matches.slice(0, 2).map(m => m[1].trim());
                     data[itemDate.getDate()] = emojis;
-                } else {
-                    // Fallback for old data or simple format
-                    const match = item.content.match(/<h3[^>]*>([\s\S]*?)<span/);
-                    if (match) {
-                        let theme = match[1].trim();
-                        theme = theme.replace(/\n/g, '').trim();
-                        data[itemDate.getDate()] = [theme];
-                    }
                 }
             }
         });
