@@ -82,6 +82,11 @@ export async function GET(request: Request) {
                 fullContent = fullContent.split(disclaimerMarker)[0].trim();
             }
 
+            const sourceMarker = "출처 :";
+            if (fullContent.includes(sourceMarker)) {
+                fullContent = fullContent.split(sourceMarker)[0].trim();
+            }
+
             // Format
             try {
                 const formatted = formatStockReport(fullContent);
