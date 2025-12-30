@@ -9,12 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.89.0",
     "input": "^1.0.1",
     "next": "16.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "telegram": "^2.26.22"
+    "telegram": "^2.26.22",
+    "youtube-transcript": "^1.2.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

@@ -103,6 +103,49 @@ export default function NewsFeed({ initialNews }: { initialNews: NewsItem[] }) {
         });
     }, [initialNews, currentSource]);
 
+    const [youtubeUrl, setYoutubeUrl] = useState('');
+    const [isSummarizing, setIsSummarizing] = useState(false);
+
+    const handleSummarize = async () => {
+        if (!youtubeUrl) return;
+        setIsSummarizing(true);
+        try {
+            // Get today's date or the date relevant to the view. 
+            // Assuming for now we are adding content for "today" or a specific date from context.
+            // But NewsFeed is a list. If we are on a dashboard showing "latest", we might want to tag it with today's date.
+            // Or if the user selected a date in calendar (which is not passed here directly, but `initialNews` has items).
+            // Let's use today's date strings for simplicity as a default, 
+            // or we might need to ask user for date if not implied.
+            // For now, let's use the current client date (KST).
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+
+            const response = await fetch('/api/summarize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: youtubeUrl, date: dateStr }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(data.error || '요약에 실패했습니다.');
+            } else {
+                alert('요약이 완료되었습니다.');
+                // Refresh the page to show new content
+                window.location.reload();
+            }
+        } catch (error) {
+            console.error(error);
+            alert('오류가 발생했습니다.');
+        } finally {
+            setIsSummarizing(false);
+        }
+    };
+
     return (
         <div className="lg:col-span-1 space-y-8 lg:-mt-[3.5rem]">
             {/* Controls & Tabs */}
@@ -146,12 +189,35 @@ export default function NewsFeed({ initialNews }: { initialNews: NewsItem[] }) {
             {filteredNews.length === 0 ? (
                 <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
                     <p className="text-slate-500 text-lg">
-                        {currentSource === '이세무사' ? '이세무사 컨텐츠가 없습니다.' : '표시할 뉴스가 없습니다.'}
-                    </p>
-                </div>
+                        {currentSource === '이세무사' ? (
+                            <div className="flex flex-col items-center space-y-4 max-w-md mx-auto">
+                                <p className="text-slate-500 text-lg">이세무사 컨텐츠가 없습니다.</p>
+                                <div className="w-full space-y-2">
+                                    <p className="text-sm text-slate-400 text-center">YouTube URL을 입력하여 요약할 수 있습니다.</p>
+                                    <div className="flex space-x-2">
+                                        <input
+                                            type="text"
+                                            placeholder="https://youtu.be/..."
+                                            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none"
+                                            value={youtubeUrl}
+                                            onChange={(e) => setYoutubeUrl(e.target.value)}
+                                        />
+                                        <button
+                                            onClick={handleSummarize}
+                                            disabled={isSummarizing || !youtubeUrl}
+                                            className="px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
+                                        >
+                                            {isSummarizing ? '요약 중...' : '요약하기'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-slate-500 text-lg">표시할 뉴스가 없습니다.</p>
+                        )}
             ) : filteredNews.map((item) => (
-                <NewsItemCard key={item.id} item={item} filterMinCap={filterMinCap} />
+                        <NewsItemCard key={item.id} item={item} filterMinCap={filterMinCap} />
             ))}
-        </div>
-    );
+                </div>
+            );
 }
