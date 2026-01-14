@@ -13,7 +13,8 @@ export async function POST(request: Request) {
         }
 
         // 1. Extract Video ID
-        const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^&]+)/);
+        // Supports: youtu.be/ID, youtube.com/watch?v=ID, youtube.com/live/ID, youtube.com/shorts/ID
+        const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|live\/|shorts\/))([^&?]+)/);
         const videoId = videoIdMatch ? videoIdMatch[1] : null;
 
         if (!videoId) {
@@ -22,19 +23,26 @@ export async function POST(request: Request) {
 
         // 2. Fetch Transcript
         let transcriptText = '';
+
         try {
             const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId, { lang: 'ko' });
             transcriptText = transcriptItems.map(item => item.text).join(' ');
         } catch (error) {
-            console.error("Transcript fetch error:", error);
-            // Fallback: try without language param or handle errors gracefully
-            // For now, return error as we need text to summarize
-            return NextResponse.json({ error: 'Failed to fetch transcript. The video might not have captions.' }, { status: 422 });
+            console.log(`Korean caption failed for ${videoId}, trying auto/default...`);
+            try {
+                const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
+                transcriptText = transcriptItems.map(item => item.text).join(' ');
+            } catch (fallbackError: any) {
+                console.error("Transcript fetch error:", fallbackError);
+                return NextResponse.json({
+                    error: `자막을 가져올 수 없습니다. (${fallbackError.message})`
+                }, { status: 422 });
+            }
         }
 
         // 3. Summarize with Gemini
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
         const prompt = `
       다음은 주식 관련 유튜브 영상의 자막 스크립트입니다. 

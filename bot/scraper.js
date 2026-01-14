@@ -56,55 +56,51 @@ async function main() {
         limit: 1000, // Fetch more messages to get older data
     });
 
-    // 1. Collect all relevant messages first
-    const validMessages = [];
-    const targetPhrase = "몽당연필의 장마감 시황";
-    const meaningfulKeywords = [targetPhrase, "상승률TOP30", "TOP30 정보 작성자", "상승률 TOP30"];
+    // 1. Group ALL messages by date (YYYY-MM-DD in KST) first
+    // This ensures we capture all parts of a report even if some parts lack keywords.
+    const groupedMessages = {};
 
     for (const message of messages) {
         if (message.date <= cutoffDate.getTime() / 1000) continue;
         if (!message.message) continue;
 
-        const content = message.message;
-        const isRelevant = meaningfulKeywords.some(keyword => content.includes(keyword));
-
-        if (isRelevant) {
-            validMessages.push({
-                id: message.id,
-                dateObj: new Date(message.date * 1000), // Keep Date object for sorting/key
-                content: content
-            });
-        }
-    }
-
-    // 2. Group by date (YYYY-MM-DD in KST)
-    // Assuming messages are from the same "report" if they are on the same day.
-    const groupedMessages = {};
-
-    for (const msg of validMessages) {
-        // Convert to KST string for grouping key
-        const dateKey = msg.dateObj.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" });
+        const dateObj = new Date(message.date * 1000);
+        const dateKey = dateObj.toLocaleDateString("ko-KR", { timeZone: "Asia/Seoul" });
 
         if (!groupedMessages[dateKey]) {
             groupedMessages[dateKey] = [];
         }
-        groupedMessages[dateKey].push(msg);
+        groupedMessages[dateKey].push({
+            id: message.id,
+            dateObj: dateObj,
+            content: message.message
+        });
     }
 
     const newsList = [];
+    const targetPhrase = "몽당연필의 장마감 시황";
+    const meaningfulKeywords = [targetPhrase, "상승률TOP30", "TOP30 정보 작성자", "상승률 TOP30"];
 
-    // 3. Process each group
-    // Sort keys desc (Newest dates first)
+    // 2. Process each date group
     const sortedDates = Object.keys(groupedMessages).sort((a, b) => new Date(b) - new Date(a));
 
     for (const dateKey of sortedDates) {
         const msgs = groupedMessages[dateKey];
 
+        // Check if ANY message in this day group contains separate keywords
+        // If the day has the report keyword, we treat the whole day's messages as the report candidates
+        // (Assuming the channel is dedicated or low traffic enough that grouping by day is safe)
+        const isRelevant = msgs.some(m => meaningfulKeywords.some(k => m.content.includes(k)));
+
+        if (!isRelevant) continue;
+
         // Sort messages by ID ascending (Oldest first -> Part 1, Part 2...)
         msgs.sort((a, b) => a.id - b.id);
 
+
         // Merge content
         let fullContent = msgs.map(m => m.content).join("\n\n");
+        console.log(`Date: ${dateKey} | Grouped ${msgs.length} msgs: ${msgs.map(m => m.id).join(', ')}`);
 
         // 4. Clean Header
         // Remove everything up to "몽당연필의 장마감 시황" if it exists
@@ -126,10 +122,13 @@ async function main() {
         try {
             const formattedContent = formatStockReport(fullContent);
             if (formattedContent) {
+                console.log(`Formatting SUCCESS for ${dateKey}`);
                 fullContent = formattedContent;
+            } else {
+                console.log(`Formatting FAILED (null) for ${dateKey}`);
             }
         } catch (e) {
-            console.error("Error formatting content:", e);
+            console.error(`Formatting ERROR for ${dateKey}:`, e);
             // Fallback to original cleaned content if formatting fails
         }
 

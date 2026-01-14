@@ -1,6 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import ReactMarkdown from 'react-markdown';
 
 type NewsItem = {
     id: number;
@@ -29,7 +31,36 @@ function parseMarketCap(text: string): number {
     return total;
 }
 
+
+function cleanHtmlContent(html: string): string {
+    // Basic cleanup to remove empty sections that might have been left over
+    if (typeof window === 'undefined') return html; // Server-side safety
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // 1. Remove mb-6 sections (Main Categories) if they have no UL or empty UL
+    const categories = doc.querySelectorAll('div.mb-6');
+    categories.forEach(div => {
+        const ul = div.querySelector('ul');
+        if (!ul || ul.children.length === 0 || !ul.textContent?.trim()) {
+            div.remove();
+        }
+    });
+
+    // 2. Remove any truly empty divs (whitespace only)
+    doc.querySelectorAll('div').forEach(div => {
+        if (!div.textContent?.trim() && div.children.length === 0) {
+            div.remove();
+        }
+    });
+
+    return doc.body.innerHTML;
+}
+
 function filterHtmlContent(html: string, minCap: number): string {
+    if (typeof window === 'undefined') return html;
+
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
 
@@ -58,166 +89,228 @@ function filterHtmlContent(html: string, minCap: number): string {
     return doc.body.innerHTML;
 }
 
-// Subcomponent for News Item
-function NewsItemCard({ item, filterMinCap }: { item: NewsItem, filterMinCap: boolean }) {
-    const displayContent = useMemo(() => {
-        // Filter if needed and if it's Mongdang content (usually has market cap info)
-        if (filterMinCap && item.source === '몽당연필') {
-            return filterHtmlContent(item.content, 1000);
+// Subcomponent for News Item Content
+function NewsContent({ item, filterMinCap, setFilterMinCap }: { item: NewsItem, filterMinCap: boolean, setFilterMinCap: (v: boolean) => void }) {
+    const [displayContent, setDisplayContent] = useState(item.content);
+    const [shouldHide, setShouldHide] = useState(false);
+
+    useEffect(() => {
+        let content = item.content;
+
+        if (item.source === '몽당연필') {
+            if (filterMinCap) {
+                content = filterHtmlContent(content, 1000);
+            }
+            content = cleanHtmlContent(content);
         }
-        return item.content;
-    }, [item.content, filterMinCap, item.source]);
 
-    const itemDate = new Date(item.date);
-    const dateId = `news-${itemDate.getFullYear()}-${String(itemDate.getMonth() + 1).padStart(2, '0')}-${String(itemDate.getDate()).padStart(2, '0')}`;
+        if (content !== displayContent) {
+            setDisplayContent(content);
+        }
 
-    const isLeesemusa = item.source === '이세무사';
+        if (!content) {
+            setShouldHide(true);
+            return;
+        }
+        const trimmed = content.trim();
+        if (trimmed === '') {
+            setShouldHide(true);
+            return;
+        }
 
-    return (
-        <article id={dateId} className="group bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 overflow-hidden border border-slate-100 scroll-mt-24">
-            <div className="p-6 sm:p-8">
-                <div className="flex items-center justify-end mb-6 pb-4 border-b border-slate-50">
-                    <time className="text-sm font-medium text-slate-400">
-                        {itemDate.toLocaleString('ko-KR', {
-                            month: 'long',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        })}
-                    </time>
+        if (item.source === '몽당연필') {
+            const div = document.createElement('div');
+            div.innerHTML = trimmed;
+            const hasText = div.textContent && div.textContent.trim().length > 0;
+            const hasMedia = div.querySelector('img') || div.querySelector('iframe');
+            if (!hasText && !hasMedia) setShouldHide(true);
+            else setShouldHide(false);
+        } else {
+            if (trimmed.length === 0) setShouldHide(true);
+            else setShouldHide(false);
+        }
+
+    }, [item.content, item.source, filterMinCap, displayContent]);
+
+    if (shouldHide) return <div className="p-4 text-center text-gray-400">내용이 없습니다.</div>;
+
+    const toggle = (
+        <label className="flex items-center cursor-pointer space-x-2 select-none" onClick={(e) => e.stopPropagation()}>
+            <input
+                type="checkbox"
+                checked={filterMinCap}
+                onChange={(e) => setFilterMinCap(e.target.checked)}
+                className="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            />
+            <span className="text-slate-600 text-sm">시총 1000억 이상</span>
+        </label>
+    );
+
+    // If Mongdang Pencil, try to split content to inject toggle in header
+    if (item.source === '몽당연필') {
+        // Regex to split: Preamble, Header, Rest
+        // Matches <h2 ...> ... 상승률 TOP 30 정리 ... </h2>
+        const headerRegex = /(<h2[^>]*>.*?상승률\s*TOP\s*30\s*정리.*?<\/h2>)/i;
+        const parts = displayContent.split(headerRegex);
+
+        if (parts.length >= 3) {
+            const preamble = parts[0];
+            const headerHtml = parts[1]; // The full <h2>...</h2> string
+            const rest = parts.slice(2).join('');
+
+            // Extract text from headerHtml to re-render cleanly
+            const headerTextMatch = headerHtml.match(/>(.*?)</);
+            const headerText = headerTextMatch ? headerTextMatch[1] : "상승률 TOP 30 정리";
+
+            return (
+                <div className="text-slate-700 leading-relaxed">
+                    {/* Preamble */}
+                    <div dangerouslySetInnerHTML={{ __html: preamble }} />
+
+                    {/* Custom Header with Toggle */}
+                    <div className="flex flex-wrap justify-between items-end mb-4 border-b border-gray-200 pb-2 gap-2">
+                        <h2 className="text-xl sm:text-2xl font-bold text-slate-800">
+                            {headerText}
+                        </h2>
+                        <div className="mb-0.5">
+                            {toggle}
+                        </div>
+                    </div>
+
+                    {/* Rest of Content */}
+                    <div dangerouslySetInnerHTML={{ __html: rest }} />
                 </div>
-                <div className="text-slate-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: displayContent }} />
-            </div>
-        </article>
+            );
+        }
+    }
+
+    // Fallback or Isamusa
+    return (
+        <div className="text-slate-700 leading-relaxed prose prose-sm max-w-none">
+            {item.source === '이세무사' ? (
+                <ReactMarkdown>{displayContent}</ReactMarkdown>
+            ) : (
+                <div dangerouslySetInnerHTML={{ __html: displayContent }} />
+            )}
+        </div>
     );
 }
 
-export default function NewsFeed({ initialNews }: { initialNews: NewsItem[] }) {
+// Daily Card Component that holds tabs
+function DailyNewsCard({ dateKey, items }: { dateKey: string, items: { [key: string]: NewsItem } }) {
+    const [activeTab, setActiveTab] = useState('몽당연필');
     const [filterMinCap, setFilterMinCap] = useState(false);
-    const [currentSource, setCurrentSource] = useState('몽당연필'); // '몽당연필' or '이세무사'
 
-    const filteredNews = useMemo(() => {
-        return initialNews.filter(item => {
-            const itemSource = item.source || '몽당연필';
-            return itemSource === currentSource;
-        });
-    }, [initialNews, currentSource]);
+    // Determine available tabs
+    const hasMongdang = !!items['몽당연필'];
+    const hasLee = !!items['이세무사'];
 
-    const [youtubeUrl, setYoutubeUrl] = useState('');
-    const [isSummarizing, setIsSummarizing] = useState(false);
+    const activeItem = items[activeTab];
 
-    const handleSummarize = async () => {
-        if (!youtubeUrl) return;
-        setIsSummarizing(true);
-        try {
-            // Get today's date or the date relevant to the view. 
-            // Assuming for now we are adding content for "today" or a specific date from context.
-            // But NewsFeed is a list. If we are on a dashboard showing "latest", we might want to tag it with today's date.
-            // Or if the user selected a date in calendar (which is not passed here directly, but `initialNews` has items).
-            // Let's use today's date strings for simplicity as a default, 
-            // or we might need to ask user for date if not implied.
-            // For now, let's use the current client date (KST).
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            const dateStr = `${year}-${month}-${day}`;
+    const displayDate = new Date(dateKey); // dateKey is YYYY-MM-DD (KST based if grouped correctly)
+    // Actually dateKey comes from initialNews grouping. 
+    // We should parse one of the items to get a Date object for formatting, 
+    // or just trust the grouping key if it's reliable.
+    // Let's use the date from one of the items for accurate Time formatting if needed, 
+    // but dateKey is likely sufficient for the Header.
 
-            const response = await fetch('/api/summarize', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: youtubeUrl, date: dateStr }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                alert(data.error || '요약에 실패했습니다.');
-            } else {
-                alert('요약이 완료되었습니다.');
-                // Refresh the page to show new content
-                window.location.reload();
-            }
-        } catch (error) {
-            console.error(error);
-            alert('오류가 발생했습니다.');
-        } finally {
-            setIsSummarizing(false);
-        }
-    };
+    const dateId = `news-${dateKey}`;
 
     return (
-        <div className="lg:col-span-1 space-y-8 lg:-mt-[3.5rem]">
-            {/* Controls & Tabs */}
-            <div className="sticky top-8 z-10 space-y-4 mb-8">
-                <div className="flex justify-between items-center bg-white/80 backdrop-blur-md p-2 rounded-2xl shadow-sm border border-slate-200/60">
-                    {/* Source Tabs */}
-                    <div className="flex space-x-1 bg-slate-100/50 p-1 rounded-xl">
+        <article id={dateId} className="group bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.08)] transition-all duration-300 overflow-hidden border border-slate-100 scroll-mt-24 mb-8">
+            <div className="p-6 sm:p-8">
+                {/* Header: Tabs (Left) - Filter (Center) - Date (Right) */}
+                <div className="relative flex flex-col sm:flex-row items-center justify-between mb-6 pb-4 border-b border-slate-50 gap-4">
+                    {/* Left: Tabs */}
+                    <div className="flex space-x-1 bg-slate-100 p-1 rounded-xl z-10 self-start sm:self-auto">
                         <button
-                            onClick={() => setCurrentSource('몽당연필')}
-                            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${currentSource === '몽당연필'
+                            onClick={() => setActiveTab('몽당연필')}
+                            disabled={!hasMongdang}
+                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === '몽당연필'
                                 ? 'bg-white text-blue-700 shadow-sm ring-1 ring-black/5'
-                                : 'text-slate-500 hover:bg-white/50'
+                                : hasMongdang ? 'text-slate-500 hover:bg-white/50' : 'text-slate-300 cursor-not-allowed'
                                 }`}
                         >
                             몽당연필
                         </button>
                         <button
-                            onClick={() => setCurrentSource('이세무사')}
-                            className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${currentSource === '이세무사'
+                            onClick={() => setActiveTab('이세무사')}
+                            disabled={!hasLee}
+                            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activeTab === '이세무사'
                                 ? 'bg-white text-red-600 shadow-sm ring-1 ring-black/5'
-                                : 'text-slate-500 hover:bg-white/50'
+                                : hasLee ? 'text-slate-500 hover:bg-white/50' : 'text-slate-300 cursor-not-allowed'
                                 }`}
                         >
                             이세무사
                         </button>
                     </div>
 
-                    {/* Filter Toggle */}
-                    <label className="flex items-center cursor-pointer space-x-2 px-3 py-1.5 hover:bg-slate-50 rounded-lg transition-colors">
-                        <input
-                            type="checkbox"
-                            checked={filterMinCap}
-                            onChange={(e) => setFilterMinCap(e.target.checked)}
-                            className="form-checkbox h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                        />
-                        <span className="text-sm font-medium text-slate-700">시총 1000억 이상</span>
-                    </label>
-                </div>
-            </div>
+                    {/* Filter Toggle removed from here */}
 
-            {filteredNews.length === 0 ? (
-                <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                    <p className="text-slate-500 text-lg">
-                        {currentSource === '이세무사' ? (
-                            <div className="flex flex-col items-center space-y-4 max-w-md mx-auto">
-                                <p className="text-slate-500 text-lg">이세무사 컨텐츠가 없습니다.</p>
-                                <div className="w-full space-y-2">
-                                    <p className="text-sm text-slate-400 text-center">YouTube URL을 입력하여 요약할 수 있습니다.</p>
-                                    <div className="flex space-x-2">
-                                        <input
-                                            type="text"
-                                            placeholder="https://youtu.be/..."
-                                            className="flex-1 px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:outline-none"
-                                            value={youtubeUrl}
-                                            onChange={(e) => setYoutubeUrl(e.target.value)}
-                                        />
-                                        <button
-                                            onClick={handleSummarize}
-                                            disabled={isSummarizing || !youtubeUrl}
-                                            className="px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors whitespace-nowrap"
-                                        >
-                                            {isSummarizing ? '요약 중...' : '요약하기'}
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ) : (
-                            <p className="text-slate-500 text-lg">표시할 뉴스가 없습니다.</p>
-                        )}
-            ) : filteredNews.map((item) => (
-                        <NewsItemCard key={item.id} item={item} filterMinCap={filterMinCap} />
-            ))}
+                    {/* Right: Date */}
+                    <time className="text-sm font-medium text-slate-400 z-10 self-end sm:self-auto" suppressHydrationWarning>
+                        {displayDate.toLocaleDateString('ko-KR', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            weekday: 'long'
+                        })}
+                    </time>
                 </div>
-            );
+
+                {/* Content */}
+                {activeItem ? (
+                    <NewsContent
+                        item={activeItem}
+                        filterMinCap={filterMinCap}
+                        setFilterMinCap={setFilterMinCap}
+                    />
+                ) : (
+                    <div className="py-10 text-center text-slate-400 text-sm bg-slate-50/50 rounded-xl">
+                        해당 소식은 없습니다.
+                    </div>
+                )}
+            </div>
+        </article>
+    );
+}
+
+export default function NewsFeed({ initialNews }: { initialNews: NewsItem[] }) {
+    // Group items by Date
+    const groupedNews = useMemo(() => {
+        const groups: { [date: string]: { [source: string]: NewsItem } } = {};
+
+        initialNews.forEach(item => {
+            // Convert to YYYY-MM-DD
+            const d = new Date(item.date);
+            const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+            if (!groups[dateKey]) {
+                groups[dateKey] = {};
+            }
+
+            // source validation
+            const source = (item.source === '이세무사') ? '이세무사' : '몽당연필';
+            groups[dateKey][source] = item;
+        });
+
+        // Convert to array and sort by date descending
+        return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
+    }, [initialNews]);
+
+    return (
+        <div className="lg:col-span-1 space-y-8 lg:-mt-[3.5rem]">
+            {/* Global Controls removed as requested, moved to each card */}
+
+            {groupedNews.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                    <p className="text-slate-500 text-lg">표시할 뉴스가 없습니다.</p>
+                </div>
+            ) : (
+                groupedNews.map(([dateKey, items]) => (
+                    <DailyNewsCard key={dateKey} dateKey={dateKey} items={items} />
+                ))
+            )}
+        </div>
+    );
 }

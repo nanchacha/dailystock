@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 type NewsItem = {
     id: number;
@@ -10,20 +10,27 @@ type NewsItem = {
 };
 
 export default function Calendar({ news }: { news: NewsItem[] }) {
-    const [currentDate, setCurrentDate] = useState(new Date());
+    const [currentDate, setCurrentDate] = useState<Date | null>(null);
+
+    useEffect(() => {
+        setCurrentDate(new Date());
+    }, []);
 
     const daysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
     const firstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
 
     const prevMonth = () => {
+        if (!currentDate) return;
         setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
     };
 
     const nextMonth = () => {
+        if (!currentDate) return;
         setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
     };
 
     const monthData = useMemo(() => {
+        if (!currentDate) return {};
         const data: Record<number, string[]> = {};
         const year = currentDate.getFullYear();
         const month = currentDate.getMonth();
@@ -48,6 +55,7 @@ export default function Calendar({ news }: { news: NewsItem[] }) {
     }, [currentDate, news]);
 
     const renderDays = () => {
+        if (!currentDate) return null;
         const totalDays = daysInMonth(currentDate);
         const startDay = firstDayOfMonth(currentDate);
         const days = [];
@@ -105,6 +113,16 @@ export default function Calendar({ news }: { news: NewsItem[] }) {
         }
         return days;
     };
+
+    if (!currentDate) {
+        // Render a placeholder or skeleton to match server-side "loading" state (which is essentially empty or just wrapper)
+        // Actually, just returning a container with reasonable height prevents layout shift
+        return (
+            <div className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-100 overflow-hidden p-6 h-[400px] flex items-center justify-center">
+                <div className="text-slate-400">Loading Calendar...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="bg-white rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-100 overflow-hidden p-6">
