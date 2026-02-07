@@ -23,7 +23,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        npm install telegram input dotenv
+        npm install telegram input dotenv @supabase/supabase-js
 
     - name: Run Scraper
       env:
@@ -38,6 +38,15 @@ jobs:
         
         # 봇 실행
         node bot/scraper.js
+
+    - name: Run Migration
+      env:
+        NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      run: |
+        # DB 마이그레이션 실행
+        node scripts/migrate.js
 
     - name: Commit and Push changes
       run: |
